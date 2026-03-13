@@ -54,7 +54,6 @@
     padding: 24px;
   }
 
-  /* Header */
   header {
     display: flex;
     align-items: center;
@@ -119,7 +118,6 @@
 
   #last-update { font-size: 11px; color: var(--text-dim); }
 
-  /* Filter tabs */
   .filter-tabs {
     display: flex;
     gap: 8px;
@@ -141,11 +139,9 @@
   }
 
   .tab:hover { border-color: var(--green); color: var(--green); }
-
   .tab.active.quiz { border-color: var(--green); color: var(--green); background: var(--green-dim); }
   .tab.active.super { border-color: var(--purple); color: var(--purple); background: #aa55ff22; }
 
-  /* KPIs */
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -191,7 +187,6 @@
 
   .kpi-sub { font-size: 11px; color: var(--text-mid); }
 
-  /* Main grid */
   .main-grid {
     display: grid;
     grid-template-columns: 1fr 380px;
@@ -223,7 +218,6 @@
 
   .panel-body { padding: 20px; }
 
-  /* Funil */
   .funnel-list { display: flex; flex-direction: column; gap: 12px; }
 
   .funnel-step { position: relative; }
@@ -274,8 +268,43 @@
   .bar-fill.warn { background: var(--yellow); box-shadow: 0 0 8px #ffcc0044; }
   .bar-fill.danger { background: var(--red); box-shadow: 0 0 8px #ff445544; }
   .bar-fill.purple { background: var(--purple); box-shadow: 0 0 8px #aa55ff44; }
+  .bar-fill.blue { background: var(--blue); box-shadow: 0 0 8px #4488ff44; }
 
-  /* SIM/NÃO bar */
+  /* CONVERSÕES SECTION */
+  .conv-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 12px;
+  }
+  .conv-divider-line { flex: 1; height: 1px; background: var(--border-bright); }
+  .conv-divider-label {
+    font-size: 10px;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+
+  .conv-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-left: 34px;
+  }
+
+  .conv-card {
+    background: rgba(68,136,255,0.06);
+    border: 1px solid rgba(68,136,255,0.2);
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+
+  .conv-card-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .conv-card-value { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 800; color: var(--blue); }
+  .conv-card-sub { font-size: 10px; color: var(--text-mid); margin-top: 2px; }
+
+  /* SIM/NÃO */
   .sim-nao-bar {
     margin-left: 34px;
     margin-top: 6px;
@@ -301,7 +330,6 @@
   .sim-label { color: var(--green); }
   .nao-label { color: var(--red); }
 
-  /* Sessões / paradas */
   .sessions-list {
     display: flex;
     flex-direction: column;
@@ -348,7 +376,6 @@
 
   .session-time { color: var(--text-dim); font-size: 10px; flex-shrink: 0; }
 
-  /* Empty & loading */
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -375,7 +402,6 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Footer */
   footer {
     margin-top: 20px;
     display: flex;
@@ -403,6 +429,7 @@
   @media (max-width: 900px) {
     .kpi-row { grid-template-columns: repeat(2, 1fr); }
     .main-grid { grid-template-columns: 1fr; }
+    .conv-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -426,9 +453,8 @@
     </div>
   </header>
 
-  <!-- Filtro de fluxo -->
   <div class="filter-tabs">
-    <button class="tab quiz active" onclick="setView('quiz')">⬡ Quiz Geral</button>
+    <button class="tab quiz active" onclick="setView('quiz')">⬡ O Quiz Geral</button>
     <button class="tab super" onclick="setView('super')">🏪 Supermercado</button>
   </div>
 
@@ -548,8 +574,6 @@
 <script>
 const WEBHOOK_URL       = 'https://quantum-n8n.0z5bvn.easypanel.host/webhook/bpi-canvas-dados';
 const WEBHOOK_SUPER_URL = 'https://quantum-n8n.0z5bvn.easypanel.host/webhook/bpi-canvas-super';
-const REFRESH_MS = 10000;
-let refreshTimer = null;
 let currentView = 'quiz';
 
 function setView(v) {
@@ -594,19 +618,19 @@ async function fetchData() {
     document.getElementById('spinner-funil').style.display = 'none';
     document.getElementById('spinner-super').style.display = 'none';
   }
-  clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(fetchData, REFRESH_MS);
 }
-
-// ===== QUIZ GERAL =====
 function processQuizData(data) {
-  const funil = data.funil || [];
-  const paradas = data.paradas || [];
+  const funilRaw = data.funil || [];
+  const paradas  = data.paradas || [];
   const visitantes = data.visitantes || 0;
-  const leads = data.leads || 0;
-  const convGeral = parseFloat(data.conv_geral || 0);
+  const leads      = data.leads || 0;
+  const convGeral  = parseFloat(data.conv_geral || 0);
 
-  if (!funil.length) { showEmptyQuiz(); return; }
+  // Separa eventos de conversão (etapa=0) do funil principal
+  const funil       = funilRaw.filter(f => parseInt(f.etapa) > 0);
+  const conversoes  = funilRaw.filter(f => parseInt(f.etapa) === 0);
+
+  if (!funil.length && !conversoes.length) { showEmptyQuiz(); return; }
 
   let maxDropEtapa = '—', maxDropPct = 0;
   paradas.forEach(p => {
@@ -614,27 +638,29 @@ function processQuizData(data) {
     if (pct > maxDropPct) { maxDropPct = pct; maxDropEtapa = p.nome_etapa; }
   });
 
-  const somaEtapas = funil.reduce((a, f) => a + (f.etapa * f.sessoes), 0);
+  const somaEtapas   = funil.reduce((a, f) => a + (f.etapa * f.sessoes), 0);
   const totalSessoes = funil.reduce((a, f) => a + f.sessoes, 0);
-  const mediaEtapa = totalSessoes > 0 ? (somaEtapas / totalSessoes).toFixed(1) : '—';
+  const mediaEtapa   = totalSessoes > 0 ? (somaEtapas / totalSessoes).toFixed(1) : '—';
 
-  document.getElementById('kpi-sessoes').textContent = visitantes;
-  document.getElementById('kpi-etapa-media').textContent = mediaEtapa;
-  document.getElementById('kpi-completos').textContent = leads;
+  document.getElementById('kpi-sessoes').textContent       = visitantes;
+  document.getElementById('kpi-etapa-media').textContent   = mediaEtapa;
+  document.getElementById('kpi-completos').textContent     = leads;
   document.getElementById('kpi-completos-pct').textContent = `${convGeral}% de conversão`;
   document.getElementById('kpi-abandono-step').textContent = maxDropEtapa;
-  document.getElementById('kpi-abandono-pct').textContent = maxDropPct > 0 ? `−${maxDropPct}% do total` : '—';
-  document.getElementById('footer-count').textContent = `${funil.length} etapas · ${visitantes} sessões`;
+  document.getElementById('kpi-abandono-pct').textContent  = maxDropPct > 0 ? `−${maxDropPct}% do total` : '—';
+  document.getElementById('footer-count').textContent      = `${funil.length} etapas · ${visitantes} sessões`;
 
-  renderFunnel(funil);
+  renderFunnel(funil, conversoes, visitantes);
   renderParadas(paradas);
 }
 
-function renderFunnel(funil) {
+function renderFunnel(funil, conversoes, visitantes) {
   const container = document.getElementById('funnel-container');
   let html = '';
+
+  // Funil principal (etapa >= 1)
   funil.forEach((f, i) => {
-    const pct = parseFloat(f.pct_do_total || 0);
+    const pct  = parseFloat(f.pct_do_total || 0);
     const drop = parseFloat(f.drop_pct_anterior || 0);
     const dropHtml = i > 0
       ? `<span class="step-drop ${drop < 20 ? 'good' : ''}">−${drop}%</span>`
@@ -656,6 +682,35 @@ function renderFunnel(funil) {
       </div>
     </div>`;
   });
+
+  // Seção de conversões (etapa=0)
+  if (conversoes.length > 0) {
+    html += `
+    <div class="conv-divider">
+      <div class="conv-divider-line"></div>
+      <div class="conv-divider-label">↓ Conversões pós-resultado</div>
+      <div class="conv-divider-line"></div>
+    </div>
+    <div class="conv-row">`;
+
+    conversoes.forEach(c => {
+      const pct = visitantes > 0 ? Math.round(c.sessoes / visitantes * 100) : 0;
+      const labels = {
+        'lead_capturado': { icon: '🎯', label: 'Lead Capturado', sub: 'submeteram o formulário' },
+        'vsl_click':      { icon: '▶️', label: 'Clique no VSL',  sub: 'clicaram no botão do vídeo' }
+      };
+      const meta = labels[c.nome_etapa] || { icon: '📌', label: c.nome_etapa, sub: 'eventos registrados' };
+      html += `
+      <div class="conv-card">
+        <div class="conv-card-label">${meta.icon} ${meta.label}</div>
+        <div class="conv-card-value">${c.sessoes} <span style="font-size:14px;color:var(--text-mid)">(${pct}%)</span></div>
+        <div class="conv-card-sub">${meta.sub}</div>
+      </div>`;
+    });
+
+    html += `</div>`;
+  }
+
   container.innerHTML = html;
 }
 
@@ -694,38 +749,36 @@ function showEmptyQuiz() {
 
 // ===== SUPERMERCADO =====
 function processSuperData(data) {
-  const funil  = data.funil  || [];
+  const funil   = data.funil   || [];
   const detalhe = data.detalhe || [];
-  const total  = data.total  || 0;
-  const final  = data.chegaram_ao_final || 0;
+  const total   = data.total   || 0;
+  const final   = data.chegaram_ao_final || 0;
 
   if (!funil.length) { showEmptySuper(); return; }
 
-  // Taxa SIM geral
   let totalSim = 0, totalResp = 0;
   detalhe.forEach(d => {
-    totalSim  += parseInt(d.sim  || 0);
-    totalResp += parseInt(d.sim  || 0) + parseInt(d.nao || 0);
+    totalSim  += parseInt(d.sim || 0);
+    totalResp += parseInt(d.sim || 0) + parseInt(d.nao || 0);
   });
   const simPct = totalResp > 0 ? Math.round(totalSim / totalResp * 100) : 0;
 
-  // Maior resistência (maior % NÃO)
   let resistStep = '—', resistPct = 0;
   detalhe.forEach(d => {
-    const tot = parseInt(d.sim || 0) + parseInt(d.nao || 0);
+    const tot    = parseInt(d.sim || 0) + parseInt(d.nao || 0);
     const naoPct = tot > 0 ? Math.round(parseInt(d.nao || 0) / tot * 100) : 0;
     if (naoPct > resistPct) { resistPct = naoPct; resistStep = d.rx_step_name; }
   });
 
   const finalPct = total > 0 ? Math.round(final / total * 100) : 0;
 
-  document.getElementById('skpi-total').textContent = total;
-  document.getElementById('skpi-final').textContent = final;
-  document.getElementById('skpi-final-pct').textContent = `${finalPct}% completaram`;
-  document.getElementById('skpi-sim-pct').textContent = `${simPct}%`;
+  document.getElementById('skpi-total').textContent       = total;
+  document.getElementById('skpi-final').textContent       = final;
+  document.getElementById('skpi-final-pct').textContent   = `${finalPct}% completaram`;
+  document.getElementById('skpi-sim-pct').textContent     = `${simPct}%`;
   document.getElementById('skpi-resist-step').textContent = resistStep;
-  document.getElementById('skpi-resist-pct').textContent = resistPct > 0 ? `${resistPct}% disseram não` : '—';
-  document.getElementById('footer-count').textContent = `${funil.length} perguntas · ${total} sessões`;
+  document.getElementById('skpi-resist-pct').textContent  = resistPct > 0 ? `${resistPct}% disseram não` : '—';
+  document.getElementById('footer-count').textContent     = `${funil.length} perguntas · ${total} sessões`;
 
   renderSuperFunnel(funil, total);
   renderSuperDetalhe(detalhe);
@@ -733,10 +786,14 @@ function processSuperData(data) {
 
 function renderSuperFunnel(funil, total) {
   const container = document.getElementById('super-funnel-container');
+  // Separa perguntas normais do vsl_view (rx_step=9)
+  const perguntas = funil.filter(f => f.rx_step_name !== 'vsl_view');
+  const vslView   = funil.find(f => f.rx_step_name === 'vsl_view');
+
   let html = '';
-  funil.forEach((f, i) => {
-    const pct = total > 0 ? Math.round(f.sessoes / total * 100) : 0;
-    const drop = i > 0 ? Math.round((funil[i-1].sessoes - f.sessoes) / funil[i-1].sessoes * 100) : 0;
+  perguntas.forEach((f, i) => {
+    const pct  = total > 0 ? Math.round(f.sessoes / total * 100) : 0;
+    const drop = i > 0 ? Math.round((perguntas[i-1].sessoes - f.sessoes) / perguntas[i-1].sessoes * 100) : 0;
     const dropHtml = i > 0
       ? `<span class="step-drop ${drop < 20 ? 'good' : ''}">−${drop}%</span>`
       : '';
@@ -757,22 +814,43 @@ function renderSuperFunnel(funil, total) {
       </div>
     </div>`;
   });
+
+  // VSL View como seção de conversão
+  if (vslView) {
+    const pct = total > 0 ? Math.round(vslView.sessoes / total * 100) : 0;
+    html += `
+    <div class="conv-divider">
+      <div class="conv-divider-line"></div>
+      <div class="conv-divider-label">↓ Conversão para VSL</div>
+      <div class="conv-divider-line"></div>
+    </div>
+    <div class="conv-row" style="margin-left:34px">
+      <div class="conv-card">
+        <div class="conv-card-label">▶️ Chegaram no VSL</div>
+        <div class="conv-card-value">${vslView.sessoes} <span style="font-size:14px;color:var(--text-mid)">(${pct}%)</span></div>
+        <div class="conv-card-sub">passaram pelo interrogatório completo</div>
+      </div>
+    </div>`;
+  }
+
   container.innerHTML = html;
 }
 
 function renderSuperDetalhe(detalhe) {
   const container = document.getElementById('super-detail-container');
-  document.getElementById('super-sessions-count').textContent = `${detalhe.length} perguntas`;
+  // Filtra vsl_view do detalhe de sim/nao
+  const detalheFiltrado = detalhe.filter(d => d.rx_step_name !== 'vsl_view');
+  document.getElementById('super-sessions-count').textContent = `${detalheFiltrado.length} perguntas`;
 
-  if (!detalhe.length) {
+  if (!detalheFiltrado.length) {
     container.innerHTML = '<div class="empty-state"><div class="empty-sub">Sem dados ainda</div></div>';
     return;
   }
 
-  const html = detalhe.map(d => {
-    const sim = parseInt(d.sim || 0);
-    const nao = parseInt(d.nao || 0);
-    const tot = sim + nao;
+  const html = detalheFiltrado.map(d => {
+    const sim    = parseInt(d.sim || 0);
+    const nao    = parseInt(d.nao || 0);
+    const tot    = sim + nao;
     const simPct = tot > 0 ? Math.round(sim / tot * 100) : 0;
     const naoPct = 100 - simPct;
     return `
