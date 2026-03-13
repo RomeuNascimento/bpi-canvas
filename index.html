@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BPI · Canvas de Funil</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Inter:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #080b0f;
@@ -17,6 +17,7 @@
     --red: #ff4455;
     --yellow: #ffcc00;
     --blue: #4488ff;
+    --purple: #aa55ff;
     --text: #c9d1d9;
     --text-dim: #4a5568;
     --text-mid: #8892a4;
@@ -32,7 +33,6 @@
     overflow-x: hidden;
   }
 
-  /* Grid background */
   body::before {
     content: '';
     position: fixed;
@@ -63,14 +63,10 @@
     background: var(--surface);
     border: 1px solid var(--border-bright);
     border-radius: 8px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
 
   .logo-dot {
     width: 10px; height: 10px;
@@ -78,6 +74,7 @@
     background: var(--green);
     box-shadow: 0 0 12px var(--green);
     animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
   }
 
   @keyframes pulse {
@@ -86,10 +83,10 @@
   }
 
   .header-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 18px;
     font-weight: 800;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     color: #fff;
   }
 
@@ -115,25 +112,38 @@
     text-transform: uppercase;
   }
 
-  .status-badge.live {
-    background: var(--green-dim);
-    border: 1px solid var(--green-mid);
-    color: var(--green);
-  }
+  .status-badge.live { background: var(--green-dim); border: 1px solid var(--green-mid); color: var(--green); }
+  .status-badge.offline { background: #ff445522; border: 1px solid #ff445544; color: var(--red); }
 
-  .status-badge.offline {
-    background: #ff445522;
-    border: 1px solid #ff445544;
-    color: var(--red);
-  }
-
-  .status-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
   #last-update { font-size: 11px; color: var(--text-dim); }
+
+  /* Filter tabs */
+  .filter-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .tab {
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border-bright);
+    color: var(--text-mid);
+    background: var(--surface);
+    transition: all 0.2s;
+  }
+
+  .tab:hover { border-color: var(--green); color: var(--green); }
+
+  .tab.active.quiz { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .tab.active.super { border-color: var(--purple); color: var(--purple); background: #aa55ff22; }
 
   /* KPIs */
   .kpi-row {
@@ -152,17 +162,12 @@
     overflow: hidden;
   }
 
-  .kpi::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-  }
-
+  .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
   .kpi.green::before { background: var(--green); }
   .kpi.blue::before { background: var(--blue); }
   .kpi.yellow::before { background: var(--yellow); }
   .kpi.red::before { background: var(--red); }
+  .kpi.purple::before { background: var(--purple); }
 
   .kpi-label {
     font-size: 10px;
@@ -173,18 +178,18 @@
   }
 
   .kpi-value {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 32px;
     font-weight: 800;
     color: #fff;
     line-height: 1;
     margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .kpi-sub {
-    font-size: 11px;
-    color: var(--text-mid);
-  }
+  .kpi-sub { font-size: 11px; color: var(--text-mid); }
 
   /* Main grid */
   .main-grid {
@@ -221,9 +226,7 @@
   /* Funil */
   .funnel-list { display: flex; flex-direction: column; gap: 12px; }
 
-  .funnel-step {
-    position: relative;
-  }
+  .funnel-step { position: relative; }
 
   .funnel-step-header {
     display: flex;
@@ -232,41 +235,24 @@
     margin-bottom: 6px;
   }
 
-  .step-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .step-info { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 
-  .step-num {
-    font-size: 10px;
-    color: var(--text-dim);
-    width: 24px;
-    text-align: right;
-  }
+  .step-num { font-size: 10px; color: var(--text-dim); width: 24px; text-align: right; flex-shrink: 0; }
 
   .step-name {
     font-size: 12px;
     color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
   }
 
-  .step-counts {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  .step-counts { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
-  .step-total {
-    font-size: 13px;
-    font-weight: 700;
-    color: #fff;
-  }
+  .step-total { font-size: 13px; font-weight: 700; color: #fff; }
 
-  .step-drop {
-    font-size: 11px;
-    color: var(--red);
-  }
-
+  .step-drop { font-size: 11px; color: var(--red); }
   .step-drop.good { color: var(--green); }
 
   .bar-bg {
@@ -287,8 +273,35 @@
 
   .bar-fill.warn { background: var(--yellow); box-shadow: 0 0 8px #ffcc0044; }
   .bar-fill.danger { background: var(--red); box-shadow: 0 0 8px #ff445544; }
+  .bar-fill.purple { background: var(--purple); box-shadow: 0 0 8px #aa55ff44; }
 
-  /* Sessões recentes */
+  /* SIM/NÃO bar */
+  .sim-nao-bar {
+    margin-left: 34px;
+    margin-top: 6px;
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    gap: 1px;
+  }
+
+  .sim-bar { background: var(--green); border-radius: 3px 0 0 3px; transition: width 0.8s; }
+  .nao-bar { background: var(--red); border-radius: 0 3px 3px 0; transition: width 0.8s; }
+
+  .sim-nao-labels {
+    margin-left: 34px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    margin-top: 3px;
+    color: var(--text-dim);
+  }
+
+  .sim-label { color: var(--green); }
+  .nao-label { color: var(--red); }
+
+  /* Sessões / paradas */
   .sessions-list {
     display: flex;
     flex-direction: column;
@@ -320,16 +333,10 @@
     text-overflow: ellipsis;
   }
 
-  .session-progress {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+  .session-progress { display: flex; align-items: center; gap: 6px; }
 
-  .session-etapa {
-    font-weight: 700;
-    color: var(--green);
-  }
+  .session-etapa { font-weight: 700; color: var(--green); }
+  .session-etapa.purple { color: var(--purple); }
 
   .session-step-name {
     color: var(--text-mid);
@@ -339,27 +346,7 @@
     text-overflow: ellipsis;
   }
 
-  .session-time {
-    color: var(--text-dim);
-    font-size: 10px;
-    flex-shrink: 0;
-  }
-
-  /* Mini dots row */
-  .mini-dots {
-    display: flex;
-    gap: 3px;
-    margin-top: 4px;
-  }
-
-  .mini-dot {
-    width: 14px; height: 4px;
-    border-radius: 2px;
-    background: var(--border);
-  }
-
-  .mini-dot.active { background: var(--green); }
-  .mini-dot.current { background: var(--yellow); }
+  .session-time { color: var(--text-dim); font-size: 10px; flex-shrink: 0; }
 
   /* Empty & loading */
   .empty-state {
@@ -411,10 +398,7 @@
     transition: all 0.2s;
   }
 
-  .refresh-btn:hover {
-    border-color: var(--green);
-    color: var(--green);
-  }
+  .refresh-btn:hover { border-color: var(--green); color: var(--green); }
 
   @media (max-width: 900px) {
     .kpi-row { grid-template-columns: repeat(2, 1fr); }
@@ -442,7 +426,14 @@
     </div>
   </header>
 
-  <div class="kpi-row">
+  <!-- Filtro de fluxo -->
+  <div class="filter-tabs">
+    <button class="tab quiz active" onclick="setView('quiz')">⬡ Quiz Geral</button>
+    <button class="tab super" onclick="setView('super')">🏪 Supermercado</button>
+  </div>
+
+  <!-- KPIs Quiz -->
+  <div id="kpis-quiz" class="kpi-row">
     <div class="kpi green">
       <div class="kpi-label">Total de Sessões</div>
       <div class="kpi-value" id="kpi-sessoes">—</div>
@@ -451,7 +442,7 @@
     <div class="kpi blue">
       <div class="kpi-label">Etapa Média</div>
       <div class="kpi-value" id="kpi-etapa-media">—</div>
-      <div class="kpi-sub">de 10 etapas</div>
+      <div class="kpi-sub">de 7 etapas</div>
     </div>
     <div class="kpi yellow">
       <div class="kpi-label">Chegaram ao Final</div>
@@ -465,8 +456,32 @@
     </div>
   </div>
 
-  <div class="main-grid">
+  <!-- KPIs Super -->
+  <div id="kpis-super" class="kpi-row" style="display:none">
+    <div class="kpi purple">
+      <div class="kpi-label">Entraram no Fluxo</div>
+      <div class="kpi-value" id="skpi-total">—</div>
+      <div class="kpi-sub">supermercados</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Chegaram ao Final</div>
+      <div class="kpi-value" id="skpi-final">—</div>
+      <div class="kpi-sub" id="skpi-final-pct">—</div>
+    </div>
+    <div class="kpi yellow">
+      <div class="kpi-label">Taxa SIM geral</div>
+      <div class="kpi-value" id="skpi-sim-pct">—</div>
+      <div class="kpi-sub">responderam sim</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Maior Resistência</div>
+      <div class="kpi-value" id="skpi-resist-step">—</div>
+      <div class="kpi-sub" id="skpi-resist-pct">—</div>
+    </div>
+  </div>
 
+  <!-- Painel Quiz -->
+  <div id="view-quiz" class="main-grid">
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">Fluxo por Etapa</span>
@@ -481,21 +496,46 @@
         </div>
       </div>
     </div>
-
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">Sessões Recentes</span>
+        <span class="panel-title">Pontos de Fuga</span>
         <span id="sessions-count" style="font-size:11px;color:var(--text-dim)">—</span>
       </div>
       <div class="panel-body">
         <div id="sessions-container" class="sessions-list">
+          <div class="empty-state"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Painel Super -->
+  <div id="view-super" class="main-grid" style="display:none">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title" style="color:#aa55ff">Funil Supermercado</span>
+        <div class="spinner" id="spinner-super" style="display:none"></div>
+      </div>
+      <div class="panel-body">
+        <div id="super-funnel-container" class="funnel-list">
           <div class="empty-state">
             <div class="spinner"></div>
+            <div class="empty-title">Carregando dados...</div>
           </div>
         </div>
       </div>
     </div>
-
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">SIM vs NÃO por Pergunta</span>
+        <span id="super-sessions-count" style="font-size:11px;color:var(--text-dim)">—</span>
+      </div>
+      <div class="panel-body">
+        <div id="super-detail-container" class="sessions-list">
+          <div class="empty-state"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <footer>
@@ -506,17 +546,21 @@
 </div>
 
 <script>
-const WEBHOOK_URL = 'https://quantum-n8n.0z5bvn.easypanel.host/webhook/bpi-canvas-dados';
+const WEBHOOK_URL       = 'https://quantum-n8n.0z5bvn.easypanel.host/webhook/bpi-canvas-dados';
+const WEBHOOK_SUPER_URL = 'https://quantum-n8n.0z5bvn.easypanel.host/webhook/bpi-canvas-super';
 const REFRESH_MS = 10000;
 let refreshTimer = null;
+let currentView = 'quiz';
 
-function ago(dateStr) {
-  const d = new Date(dateStr);
-  const diff = Math.floor((Date.now() - d) / 1000);
-  if (diff < 60) return `${diff}s atrás`;
-  if (diff < 3600) return `${Math.floor(diff/60)}min atrás`;
-  if (diff < 86400) return `${Math.floor(diff/3600)}h atrás`;
-  return d.toLocaleDateString('pt-BR');
+function setView(v) {
+  currentView = v;
+  document.getElementById('view-quiz').style.display   = v === 'quiz' ? 'grid' : 'none';
+  document.getElementById('view-super').style.display  = v === 'super' ? 'grid' : 'none';
+  document.getElementById('kpis-quiz').style.display   = v === 'quiz' ? 'grid' : 'none';
+  document.getElementById('kpis-super').style.display  = v === 'super' ? 'grid' : 'none';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.tab.' + v).classList.add('active');
+  fetchData();
 }
 
 function getBarClass(pct) {
@@ -526,12 +570,20 @@ function getBarClass(pct) {
 }
 
 async function fetchData() {
-  document.getElementById('spinner-funil').style.display = 'block';
   try {
-    const res = await fetch(WEBHOOK_URL, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    processData(data);
+    if (currentView === 'quiz') {
+      document.getElementById('spinner-funil').style.display = 'block';
+      const res = await fetch(WEBHOOK_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      processQuizData(data);
+    } else {
+      document.getElementById('spinner-super').style.display = 'block';
+      const res = await fetch(WEBHOOK_SUPER_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      processSuperData(data);
+    }
     setStatus(true);
     document.getElementById('last-update').textContent =
       'atualizado ' + new Date().toLocaleTimeString('pt-BR');
@@ -540,33 +592,32 @@ async function fetchData() {
     setStatus(false);
   } finally {
     document.getElementById('spinner-funil').style.display = 'none';
+    document.getElementById('spinner-super').style.display = 'none';
   }
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(fetchData, REFRESH_MS);
 }
 
-function processData(data) {
+// ===== QUIZ GERAL =====
+function processQuizData(data) {
   const funil = data.funil || [];
   const paradas = data.paradas || [];
   const visitantes = data.visitantes || 0;
   const leads = data.leads || 0;
   const convGeral = parseFloat(data.conv_geral || 0);
 
-  if (!funil.length) { showEmpty(); return; }
+  if (!funil.length) { showEmptyQuiz(); return; }
 
-  // Maior abandono
   let maxDropEtapa = '—', maxDropPct = 0;
   paradas.forEach(p => {
     const pct = visitantes > 0 ? Math.round(p.pararam / visitantes * 100) : 0;
     if (pct > maxDropPct) { maxDropPct = pct; maxDropEtapa = p.nome_etapa; }
   });
 
-  // Etapa média
   const somaEtapas = funil.reduce((a, f) => a + (f.etapa * f.sessoes), 0);
   const totalSessoes = funil.reduce((a, f) => a + f.sessoes, 0);
   const mediaEtapa = totalSessoes > 0 ? (somaEtapas / totalSessoes).toFixed(1) : '—';
 
-  // KPIs
   document.getElementById('kpi-sessoes').textContent = visitantes;
   document.getElementById('kpi-etapa-media').textContent = mediaEtapa;
   document.getElementById('kpi-completos').textContent = leads;
@@ -575,14 +626,11 @@ function processData(data) {
   document.getElementById('kpi-abandono-pct').textContent = maxDropPct > 0 ? `−${maxDropPct}% do total` : '—';
   document.getElementById('footer-count').textContent = `${funil.length} etapas · ${visitantes} sessões`;
 
-  // Funil
-  renderFunnel(funil, visitantes);
-
-  // Paradas como "sessões recentes"
+  renderFunnel(funil);
   renderParadas(paradas);
 }
 
-function renderFunnel(funil, totalInicio) {
+function renderFunnel(funil) {
   const container = document.getElementById('funnel-container');
   let html = '';
   funil.forEach((f, i) => {
@@ -591,7 +639,6 @@ function renderFunnel(funil, totalInicio) {
     const dropHtml = i > 0
       ? `<span class="step-drop ${drop < 20 ? 'good' : ''}">−${drop}%</span>`
       : '';
-    const barClass = getBarClass(pct);
     html += `
     <div class="funnel-step">
       <div class="funnel-step-header">
@@ -605,7 +652,7 @@ function renderFunnel(funil, totalInicio) {
         </div>
       </div>
       <div class="bar-bg">
-        <div class="bar-fill ${barClass}" style="width:${pct}%"></div>
+        <div class="bar-fill ${getBarClass(pct)}" style="width:${pct}%"></div>
       </div>
     </div>`;
   });
@@ -631,23 +678,140 @@ function renderParadas(paradas) {
   document.getElementById('sessions-count').textContent = `${paradas.length} pontos de fuga`;
 }
 
-function showEmpty() {
+function showEmptyQuiz() {
   document.getElementById('funnel-container').innerHTML = `
     <div class="empty-state">
       <div class="empty-icon">📭</div>
       <div class="empty-title">Nenhum evento ainda</div>
       <div class="empty-sub">Avance no quiz para ver os dados aparecerem aqui</div>
     </div>`;
-  document.getElementById('sessions-container').innerHTML = `
-    <div class="empty-state"><div class="empty-sub">Aguardando leads...</div></div>`;
+  document.getElementById('sessions-container').innerHTML =
+    '<div class="empty-state"><div class="empty-sub">Aguardando leads...</div></div>';
   ['kpi-sessoes','kpi-etapa-media','kpi-completos','kpi-abandono-step'].forEach(id => {
+    document.getElementById(id).textContent = '0';
+  });
+}
+
+// ===== SUPERMERCADO =====
+function processSuperData(data) {
+  const funil  = data.funil  || [];
+  const detalhe = data.detalhe || [];
+  const total  = data.total  || 0;
+  const final  = data.chegaram_ao_final || 0;
+
+  if (!funil.length) { showEmptySuper(); return; }
+
+  // Taxa SIM geral
+  let totalSim = 0, totalResp = 0;
+  detalhe.forEach(d => {
+    totalSim  += parseInt(d.sim  || 0);
+    totalResp += parseInt(d.sim  || 0) + parseInt(d.nao || 0);
+  });
+  const simPct = totalResp > 0 ? Math.round(totalSim / totalResp * 100) : 0;
+
+  // Maior resistência (maior % NÃO)
+  let resistStep = '—', resistPct = 0;
+  detalhe.forEach(d => {
+    const tot = parseInt(d.sim || 0) + parseInt(d.nao || 0);
+    const naoPct = tot > 0 ? Math.round(parseInt(d.nao || 0) / tot * 100) : 0;
+    if (naoPct > resistPct) { resistPct = naoPct; resistStep = d.rx_step_name; }
+  });
+
+  const finalPct = total > 0 ? Math.round(final / total * 100) : 0;
+
+  document.getElementById('skpi-total').textContent = total;
+  document.getElementById('skpi-final').textContent = final;
+  document.getElementById('skpi-final-pct').textContent = `${finalPct}% completaram`;
+  document.getElementById('skpi-sim-pct').textContent = `${simPct}%`;
+  document.getElementById('skpi-resist-step').textContent = resistStep;
+  document.getElementById('skpi-resist-pct').textContent = resistPct > 0 ? `${resistPct}% disseram não` : '—';
+  document.getElementById('footer-count').textContent = `${funil.length} perguntas · ${total} sessões`;
+
+  renderSuperFunnel(funil, total);
+  renderSuperDetalhe(detalhe);
+}
+
+function renderSuperFunnel(funil, total) {
+  const container = document.getElementById('super-funnel-container');
+  let html = '';
+  funil.forEach((f, i) => {
+    const pct = total > 0 ? Math.round(f.sessoes / total * 100) : 0;
+    const drop = i > 0 ? Math.round((funil[i-1].sessoes - f.sessoes) / funil[i-1].sessoes * 100) : 0;
+    const dropHtml = i > 0
+      ? `<span class="step-drop ${drop < 20 ? 'good' : ''}">−${drop}%</span>`
+      : '';
+    html += `
+    <div class="funnel-step">
+      <div class="funnel-step-header">
+        <div class="step-info">
+          <span class="step-num">P${f.rx_step}</span>
+          <span class="step-name">${f.rx_step_name}</span>
+        </div>
+        <div class="step-counts">
+          ${dropHtml}
+          <span class="step-total">${f.sessoes}</span>
+        </div>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fill purple" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderSuperDetalhe(detalhe) {
+  const container = document.getElementById('super-detail-container');
+  document.getElementById('super-sessions-count').textContent = `${detalhe.length} perguntas`;
+
+  if (!detalhe.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-sub">Sem dados ainda</div></div>';
+    return;
+  }
+
+  const html = detalhe.map(d => {
+    const sim = parseInt(d.sim || 0);
+    const nao = parseInt(d.nao || 0);
+    const tot = sim + nao;
+    const simPct = tot > 0 ? Math.round(sim / tot * 100) : 0;
+    const naoPct = 100 - simPct;
+    return `
+    <div class="session-card">
+      <div class="session-id">pergunta ${d.rx_step} · ${tot} respostas</div>
+      <div class="session-progress" style="margin-bottom:6px">
+        <span class="session-etapa purple">P${d.rx_step}</span>
+        <span class="session-step-name">${d.rx_step_name}</span>
+      </div>
+      <div class="sim-nao-bar">
+        <div class="sim-bar" style="width:${simPct}%"></div>
+        <div class="nao-bar" style="width:${naoPct}%"></div>
+      </div>
+      <div class="sim-nao-labels">
+        <span class="sim-label">✓ ${simPct}% sim (${sim})</span>
+        <span class="nao-label">✗ ${naoPct}% não (${nao})</span>
+      </div>
+    </div>`;
+  }).join('');
+  container.innerHTML = html;
+}
+
+function showEmptySuper() {
+  document.getElementById('super-funnel-container').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">🏪</div>
+      <div class="empty-title">Nenhum supermercado ainda</div>
+      <div class="empty-sub">Dados aparecerão quando leads do setor passarem pelo fluxo</div>
+    </div>`;
+  document.getElementById('super-detail-container').innerHTML =
+    '<div class="empty-state"><div class="empty-sub">Aguardando dados...</div></div>';
+  ['skpi-total','skpi-final','skpi-sim-pct','skpi-resist-step'].forEach(id => {
     document.getElementById(id).textContent = '0';
   });
 }
 
 function setStatus(online) {
   const badge = document.getElementById('status-badge');
-  const text = document.getElementById('status-text');
+  const text  = document.getElementById('status-text');
   badge.className = `status-badge ${online ? 'live' : 'offline'}`;
   text.textContent = online ? 'LIVE' : 'OFFLINE';
 }
