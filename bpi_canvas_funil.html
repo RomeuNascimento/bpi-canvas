@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPI · Canvas de Funil</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b0f;
+    --surface: #0d1117;
+    --border: #1c2430;
+    --border-bright: #2a3a4a;
+    --green: #00ff88;
+    --green-dim: #00ff8822;
+    --green-mid: #00ff8855;
+    --red: #ff4455;
+    --yellow: #ffcc00;
+    --blue: #4488ff;
+    --text: #c9d1d9;
+    --text-dim: #4a5568;
+    --text-mid: #8892a4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    margin-bottom: 24px;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--green); }
+    50% { opacity: 0.5; box-shadow: 0 0 4px var(--green); }
+  }
+
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #fff;
+  }
+
+  .header-title span { color: var(--green); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    font-size: 11px;
+    color: var(--text-mid);
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .status-badge.live {
+    background: var(--green-dim);
+    border: 1px solid var(--green-mid);
+    color: var(--green);
+  }
+
+  .status-badge.offline {
+    background: #ff445522;
+    border: 1px solid #ff445544;
+    color: var(--red);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  #last-update { font-size: 11px; color: var(--text-dim); }
+
+  /* KPIs */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi.green::before { background: var(--green); }
+  .kpi.blue::before { background: var(--blue); }
+  .kpi.yellow::before { background: var(--yellow); }
+  .kpi.red::before { background: var(--red); }
+
+  .kpi-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text-mid);
+  }
+
+  /* Main grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* Funil */
+  .funnel-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .funnel-step {
+    position: relative;
+  }
+
+  .funnel-step-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .step-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .step-num {
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 24px;
+    text-align: right;
+  }
+
+  .step-name {
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .step-counts {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .step-total {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .step-drop {
+    font-size: 11px;
+    color: var(--red);
+  }
+
+  .step-drop.good { color: var(--green); }
+
+  .bar-bg {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-left: 34px;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green-mid);
+  }
+
+  .bar-fill.warn { background: var(--yellow); box-shadow: 0 0 8px #ffcc0044; }
+  .bar-fill.danger { background: var(--red); box-shadow: 0 0 8px #ff445544; }
+
+  /* Sessões recentes */
+  .sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .sessions-list::-webkit-scrollbar { width: 4px; }
+  .sessions-list::-webkit-scrollbar-track { background: transparent; }
+  .sessions-list::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+  .session-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 11px;
+    transition: border-color 0.2s;
+  }
+
+  .session-card:hover { border-color: var(--border-bright); }
+
+  .session-id {
+    color: var(--text-dim);
+    font-size: 10px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .session-progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .session-etapa {
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .session-step-name {
+    color: var(--text-mid);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .session-time {
+    color: var(--text-dim);
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  /* Mini dots row */
+  .mini-dots {
+    display: flex;
+    gap: 3px;
+    margin-top: 4px;
+  }
+
+  .mini-dot {
+    width: 14px; height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+
+  .mini-dot.active { background: var(--green); }
+  .mini-dot.current { background: var(--yellow); }
+
+  /* Empty & loading */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+    color: var(--text-dim);
+    text-align: center;
+    gap: 8px;
+  }
+
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+  .empty-title { font-size: 13px; color: var(--text-mid); }
+  .empty-sub { font-size: 11px; }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border-bright);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Footer */
+  footer {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 0 4px;
+  }
+
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--border-bright);
+    color: var(--text-mid);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .refresh-btn:hover {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-left">
+      <div class="logo-dot"></div>
+      <div>
+        <div class="header-title">BPI <span>·</span> CANVAS DO FUNIL</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="status-badge" class="status-badge live">
+        <div class="status-dot"></div>
+        <span id="status-text">LIVE</span>
+      </div>
+      <div id="last-update">—</div>
+      <button class="refresh-btn" onclick="fetchData()">↺ ATUALIZAR</button>
+    </div>
+  </header>
+
+  <div class="kpi-row">
+    <div class="kpi green">
+      <div class="kpi-label">Total de Sessões</div>
+      <div class="kpi-value" id="kpi-sessoes">—</div>
+      <div class="kpi-sub">leads únicos</div>
+    </div>
+    <div class="kpi blue">
+      <div class="kpi-label">Etapa Média</div>
+      <div class="kpi-value" id="kpi-etapa-media">—</div>
+      <div class="kpi-sub">de 10 etapas</div>
+    </div>
+    <div class="kpi yellow">
+      <div class="kpi-label">Chegaram ao Final</div>
+      <div class="kpi-value" id="kpi-completos">—</div>
+      <div class="kpi-sub" id="kpi-completos-pct">—</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Maior Abandono</div>
+      <div class="kpi-value" id="kpi-abandono-step">—</div>
+      <div class="kpi-sub" id="kpi-abandono-pct">—</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Fluxo por Etapa</span>
+        <div class="spinner" id="spinner-funil" style="display:none"></div>
+      </div>
+      <div class="panel-body">
+        <div id="funnel-container" class="funnel-list">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-title">Carregando dados...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Sessões Recentes</span>
+        <span id="sessions-count" style="font-size:11px;color:var(--text-dim)">—</span>
+      </div>
+      <div class="panel-body">
+        <div id="sessions-container" class="sessions-list">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>BPI · Boas Práticas de Inventário · Funil de Diagnóstico</span>
+    <span id="footer-count">—</span>
+  </footer>
+
+</div>
+
+<script>
+const WEBHOOK_URL = 'https://quantum-n8n.0z5bvn.easypanel.host/webhook-test/bpi-canvas-dados';
+const REFRESH_MS = 10000;
+let refreshTimer = null;
+
+// Nomes amigáveis das etapas (ajuste conforme seu quiz)
+const STEP_NAMES = {
+  0: 'Início / Landing',
+  1: 'Tipo de negócio',
+  2: 'Tamanho da equipe',
+  3: 'Controle atual',
+  4: 'Frequência de inventário',
+  5: 'Principal problema',
+  6: 'Impacto financeiro',
+  7: 'Urgência',
+  8: 'Captura de lead',
+  9: 'Resultado',
+  10: 'Oferta'
+};
+
+function ago(dateStr) {
+  const d = new Date(dateStr);
+  const diff = Math.floor((Date.now() - d) / 1000);
+  if (diff < 60) return `${diff}s atrás`;
+  if (diff < 3600) return `${Math.floor(diff/60)}min atrás`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h atrás`;
+  return d.toLocaleDateString('pt-BR');
+}
+
+function getBarClass(pct) {
+  if (pct >= 60) return '';
+  if (pct >= 35) return 'warn';
+  return 'danger';
+}
+
+async function fetchData() {
+  document.getElementById('spinner-funil').style.display = 'block';
+
+  try {
+    const res = await fetch(WEBHOOK_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw = await res.json();
+
+    // Normaliza — aceita array de rows ou objeto com .etapas / .sessoes
+    let rows = [];
+    if (Array.isArray(raw)) {
+      rows = raw;
+    } else if (raw.dados) {
+      rows = raw.dados;
+    } else if (raw.rows) {
+      rows = raw.rows;
+    }
+
+    processData(rows);
+    setStatus(true);
+    document.getElementById('last-update').textContent =
+      'atualizado ' + new Date().toLocaleTimeString('pt-BR');
+
+  } catch (err) {
+    console.error(err);
+    setStatus(false);
+  } finally {
+    document.getElementById('spinner-funil').style.display = 'none';
+  }
+
+  // Agenda próximo refresh
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(fetchData, REFRESH_MS);
+}
+
+function processData(rows) {
+  if (!rows || rows.length === 0) {
+    showEmpty();
+    return;
+  }
+
+  // Agrupa por session_id, pega o max etapa_num de cada sessão
+  const sessionMap = {};
+  rows.forEach(r => {
+    const sid = r.session_id;
+    const etapa = parseInt(r.etapa_num ?? r.etapa ?? 0);
+    const step = r.step || r.nome_etapa || STEP_NAMES[etapa] || `Etapa ${etapa}`;
+    const ts = r.criado_em || r.created_at || null;
+
+    if (!sessionMap[sid]) {
+      sessionMap[sid] = { session_id: sid, maxEtapa: etapa, stepName: step, lastSeen: ts };
+    } else if (etapa > sessionMap[sid].maxEtapa) {
+      sessionMap[sid].maxEtapa = etapa;
+      sessionMap[sid].stepName = step;
+      if (ts) sessionMap[sid].lastSeen = ts;
+    }
+  });
+
+  const sessions = Object.values(sessionMap);
+  const totalSessions = sessions.length;
+
+  // Conta por etapa
+  const etapaCount = {};
+  let maxEtapa = 0;
+  sessions.forEach(s => {
+    const e = s.maxEtapa;
+    etapaCount[e] = (etapaCount[e] || 0) + 1;
+    if (e > maxEtapa) maxEtapa = e;
+  });
+
+  // Acumulado — quantos chegaram ATÉ cada etapa
+  const reached = {};
+  for (let e = 0; e <= maxEtapa; e++) {
+    reached[e] = sessions.filter(s => s.maxEtapa >= e).length;
+  }
+
+  const totalInicio = reached[0] || totalSessions;
+  const completos = reached[maxEtapa] || 0;
+  const pctCompleto = totalInicio ? Math.round(completos / totalInicio * 100) : 0;
+
+  // Etapa média
+  const mediaEtapa = sessions.length
+    ? (sessions.reduce((a, s) => a + s.maxEtapa, 0) / sessions.length).toFixed(1)
+    : '—';
+
+  // Maior abandono (maior queda relativa entre etapas)
+  let maxDropEtapa = 1, maxDropPct = 0;
+  for (let e = 1; e <= maxEtapa; e++) {
+    const prev = reached[e-1] || 0;
+    const curr = reached[e] || 0;
+    if (prev > 0) {
+      const drop = Math.round((prev - curr) / prev * 100);
+      if (drop > maxDropPct) { maxDropPct = drop; maxDropEtapa = e; }
+    }
+  }
+
+  // KPIs
+  document.getElementById('kpi-sessoes').textContent = totalSessions;
+  document.getElementById('kpi-etapa-media').textContent = mediaEtapa;
+  document.getElementById('kpi-completos').textContent = completos;
+  document.getElementById('kpi-completos-pct').textContent = `${pctCompleto}% de conclusão`;
+  document.getElementById('kpi-abandono-step').textContent = `E${maxDropEtapa}`;
+  document.getElementById('kpi-abandono-pct').textContent = `−${maxDropPct}% nessa etapa`;
+  document.getElementById('footer-count').textContent = `${rows.length} eventos · ${totalSessions} sessões`;
+
+  // Funil
+  renderFunnel(reached, maxEtapa, totalInicio);
+
+  // Sessões recentes
+  const sorted = [...sessions].sort((a, b) =>
+    new Date(b.lastSeen || 0) - new Date(a.lastSeen || 0)
+  );
+  document.getElementById('sessions-count').textContent = `${totalSessions} sessões`;
+  renderSessions(sorted.slice(0, 30), maxEtapa);
+}
+
+function renderFunnel(reached, maxEtapa, totalInicio) {
+  const container = document.getElementById('funnel-container');
+  if (maxEtapa === 0 && !reached[0]) { showEmpty(); return; }
+
+  let html = '';
+  for (let e = 0; e <= maxEtapa; e++) {
+    const count = reached[e] || 0;
+    const pct = totalInicio > 0 ? Math.round(count / totalInicio * 100) : 0;
+    const name = STEP_NAMES[e] || `Etapa ${e}`;
+
+    let dropHtml = '';
+    if (e > 0) {
+      const prev = reached[e-1] || 0;
+      const drop = prev > 0 ? Math.round((prev - count) / prev * 100) : 0;
+      dropHtml = `<span class="step-drop ${drop < 20 ? 'good' : ''}">−${drop}%</span>`;
+    }
+
+    const barClass = getBarClass(pct);
+
+    html += `
+    <div class="funnel-step">
+      <div class="funnel-step-header">
+        <div class="step-info">
+          <span class="step-num">E${e}</span>
+          <span class="step-name">${name}</span>
+        </div>
+        <div class="step-counts">
+          ${dropHtml}
+          <span class="step-total">${count}</span>
+        </div>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fill ${barClass}" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderSessions(sessions, maxEtapa) {
+  const container = document.getElementById('sessions-container');
+  if (!sessions.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-title">Nenhuma sessão ainda</div></div>';
+    return;
+  }
+
+  const html = sessions.map(s => {
+    const shortId = s.session_id.slice(-10);
+    const timeStr = s.lastSeen ? ago(s.lastSeen) : '—';
+    const stepLabel = STEP_NAMES[s.maxEtapa] || s.stepName || `Etapa ${s.maxEtapa}`;
+
+    const dots = Array.from({ length: maxEtapa + 1 }, (_, i) => {
+      let cls = '';
+      if (i < s.maxEtapa) cls = 'active';
+      else if (i === s.maxEtapa) cls = 'current';
+      return `<div class="mini-dot ${cls}"></div>`;
+    }).join('');
+
+    return `
+    <div class="session-card">
+      <div class="session-id">···${shortId}</div>
+      <div class="session-progress">
+        <span class="session-etapa">E${s.maxEtapa}</span>
+        <span class="session-step-name">${stepLabel}</span>
+        <span class="session-time">${timeStr}</span>
+      </div>
+      <div class="mini-dots">${dots}</div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+function showEmpty() {
+  document.getElementById('funnel-container').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-title">Nenhum evento ainda</div>
+      <div class="empty-sub">Avance no quiz para ver os dados aparecerem aqui</div>
+    </div>`;
+  document.getElementById('sessions-container').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-sub">Aguardando leads...</div>
+    </div>`;
+  ['kpi-sessoes','kpi-etapa-media','kpi-completos','kpi-abandono-step'].forEach(id => {
+    document.getElementById(id).textContent = '0';
+  });
+}
+
+function setStatus(online) {
+  const badge = document.getElementById('status-badge');
+  const text = document.getElementById('status-text');
+  badge.className = `status-badge ${online ? 'live' : 'offline'}`;
+  text.textContent = online ? 'LIVE' : 'OFFLINE';
+}
+
+// Inicia
+fetchData();
+</script>
+</body>
+</html>
